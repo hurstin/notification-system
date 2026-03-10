@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  api-gateway:
+    build:
+      context: .
+      dockerfile: apps/api-gateway/Dockerfile
+      target: development
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    command: npm run start:dev api-gateway
+    environment:
+      - NODE_ENV=development
+
+  user-service:
+    build:
+      context: .
+      dockerfile: apps/user-service/Dockerfile
+      target: development
+    ports:
+      - "3001:3000" # Mapping to a different host port to avoid conflicts
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    command: npm run start:dev user-service
+    environment:
+      - NODE_ENV=development
+
+ 
