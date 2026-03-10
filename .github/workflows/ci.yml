@@ -59,7 +59,9 @@ jobs:
       - name: Build Docker Image
         uses: docker/build-push-action@v5
         with:
-          context: ./${{ matrix.service }}
+          # Context must be root for monorepo Dockerfiles
+          context: .
+          file: apps/${{ matrix.service }}/Dockerfile
           push: false # Set to true once you add a Registry Login step
           tags: my-app/${{ matrix.service }}:latest
           # This speeds up subsequent builds
