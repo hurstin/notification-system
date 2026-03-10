@@ -25,23 +25,21 @@ jobs:
           node-version: '20'
           cache: 'npm'
           # This tells npm where to find the lockfile for caching
-          cache-dependency-path: ./${{ matrix.service }}/package-lock.json
+          # In a monorepo, there's only one package-lock.json at the root
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        working-directory: ./${{ matrix.service }}
         run: npm ci
 
       - name: Run Lint
-        working-directory: ./${{ matrix.service }}
-        run: npm run lint --if-present
+        run: npm run lint
 
       - name: Run Unit Tests
-        working-directory: ./${{ matrix.service }}
-        run: npm run test --if-present
+        # Run tests specifically for the matrix app target
+        run: npx jest apps/${{ matrix.service }}
 
       - name: Build Project
-        working-directory: ./${{ matrix.service }}
-        run: npm run build --if-present
+        run: npm run build ${{ matrix.service }}
 
   # Job 2: Build Docker Images (Only runs if Job 1 passes)
   docker-build:
