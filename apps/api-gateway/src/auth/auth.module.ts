@@ -21,7 +21,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
         transport: Transport.TCP,
         options: {
           host: process.env.USER_SERVICE_HOST || 'user-service', // Matches Docker service name
-          port: 3001,        // The port the user-service TCP server bounds to
+          port: 3001, // The port the user-service TCP server bounds to
         },
       },
     ]),

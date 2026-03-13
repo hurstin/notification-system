@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
+import { AuthUserDto } from './dto/auth-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -9,18 +10,26 @@ export class AuthService {
     private jwtService: JwtService,
     @Inject('USER_SERVICE') private client: ClientProxy, // Microservice TCP Client
   ) {}
-
-  async validateUser(username: string, pass: string): Promise<any> {
+// NEED TO BE FIXED 7
+  async validateUser(
+    username: string,
+    pass: string,
+  ): Promise<AuthUserDto | null> {
     try {
       console.log(`[API Gateway] Attempting to validate user: ${username}`);
-      const user = await firstValueFrom(
-        this.client.send({ cmd: 'verify_user_credentials' }, { username, pass }),
+      // NEED TO BE FIXED 8
+      const user = await firstValueFrom<AuthUserDto & { password?: string }>(
+        this.client.send(
+          { cmd: 'verify_user_credentials' },
+          { username, pass },
+        ),
       );
-      
+
       console.log(`[API Gateway] Received response from user-service:`, user);
-      
+
       if (user) {
         // Strip out the password if it returned the full user
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { password, ...result } = user;
         return result;
       }
@@ -31,8 +40,8 @@ export class AuthService {
       return null;
     }
   }
-
-  async login(user: any) {
+// NEED TO BE FIXED 9
+  login(user: AuthUserDto) {
     const payload = { username: user.username, sub: user.userId || user.id };
     return {
       access_token: this.jwtService.sign(payload),

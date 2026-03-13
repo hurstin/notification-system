@@ -9,10 +9,10 @@ async function bootstrap() {
       transport: Transport.TCP,
       options: {
         host: '0.0.0.0', // Bind to all interfaces (important for Docker)
-        port: 3001,      // Must match the API Gateway ClientProxy port
+        port: 3001, // Must match the API Gateway ClientProxy port
       },
     },
   );
   await app.listen();
 }
-bootstrap();
+void bootstrap();
