@@ -1,8 +1,18 @@
 import { NestFactory } from '@nestjs/core';
+import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { UserServiceModule } from './user-service.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(UserServiceModule);
-  await app.listen(process.env.port ?? 3000);
+  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
+    UserServiceModule,
+    {
+      transport: Transport.TCP,
+      options: {
+        host: '0.0.0.0', // Bind to all interfaces (important for Docker)
+        port: 3001, // Must match the API Gateway ClientProxy port
+      },
+    },
+  );
+  await app.listen();
 }
-bootstrap();
+void bootstrap();
