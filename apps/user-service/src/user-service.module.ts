@@ -10,7 +10,7 @@ import { UserServiceService } from './user-service.service';
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      
+
       useFactory: (configService: ConfigService) => {
         return {
           type: 'postgres',
@@ -19,16 +19,13 @@ import { UserServiceService } from './user-service.service';
           username: configService.get('DB_USERNAME'),
           password: configService.get('DB_PASSWORD'),
           database: configService.get<string>('DB_DATABASE'),
-          entities: [
-            User
-          ],
+          entities: [User],
           // Note: synchronize=true is convenient in dev, use migrations in prod
           synchronize: true,
           autoLoadEntities: true,
         };
       },
-      inject:[ConfigService],
-     
+      inject: [ConfigService],
     }),
     TypeOrmModule.forFeature([User]),
   ],
