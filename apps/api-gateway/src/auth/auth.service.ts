@@ -10,7 +10,7 @@ export class AuthService {
     private jwtService: JwtService,
     @Inject('USER_SERVICE') private client: ClientProxy, // Microservice TCP Client
   ) {}
-// NEED TO BE FIXED 7
+  // NEED TO BE FIXED 7
   async validateUser(
     username: string,
     pass: string,
@@ -40,7 +40,7 @@ export class AuthService {
       return null;
     }
   }
-// NEED TO BE FIXED 9
+  // NEED TO BE FIXED 9
   login(user: AuthUserDto) {
     const payload = { username: user.username, sub: user.userId || user.id };
     return {
