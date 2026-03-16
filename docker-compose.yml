@@ -14,7 +14,8 @@ services:
     command: npm run start:dev api-gateway
     environment:
       - NODE_ENV=development
-
+    networks:
+      - user-service
   user-service:
     build:
       context: .

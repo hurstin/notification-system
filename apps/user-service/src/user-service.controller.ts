@@ -7,7 +7,7 @@ export class UserServiceController {
   constructor(private readonly userServiceService: UserServiceService) {}
 
   @MessagePattern({ cmd: 'create_user' })
-  async createUser(@Payload() data: { username: string; pass: string }) {
+  async createUser(@Payload() data: { username: string; password: string }) {
     return this.userServiceService.createUser(data);
   }
 
