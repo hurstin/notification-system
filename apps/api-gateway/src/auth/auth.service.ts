@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { AuthUserDto } from './dto/auth-user.dto';
+import { CreateUserDto } from './dto/create-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -46,5 +47,9 @@ export class AuthService {
     return {
       access_token: this.jwtService.sign(payload),
     };
+  }
+
+  register(createUserDto: CreateUserDto) {
+    return this.client.send({ cmd: 'create_user' }, createUserDto);
   }
 }
