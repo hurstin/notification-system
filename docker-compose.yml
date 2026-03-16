@@ -14,7 +14,8 @@ services:
     command: npm run start:dev api-gateway
     environment:
       - NODE_ENV=development
-
+    networks:
+      - user-service
   user-service:
     build:
       context: .
@@ -28,5 +29,46 @@ services:
     command: npm run start:dev user-service
     environment:
       - NODE_ENV=development
+      - DB_HOST=user-db
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - DB_DATABASE=user-db
+    networks:
+      - user-service
+    depends_on:
+      user-db:
+        condition: service_healthy
+  # PostgreSQL Database Service for the user-service
+  user-db:
+    # Uses a lightweight Alpine Linux version of PostgreSQL 16 for a smaller image size
+    image: postgres:16-alpine
+    # Explicitly names the container instead of letting Docker auto-generate a generic name
+    container_name: user-db
+    # Maps the host's port 5432 to the container's port 5432, allowing you to connect locally (e.g. pgAdmin)
+    ports:
+      - "5432:5432"
+    # Sets up the initial database credentials and database name when the container first starts
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=user-db
+    # Mounts a specific named volume to ensure database data persists even if the container is removed
+    volumes:
+      - user-db-data:/var/lib/postgresql/data
+    # Places the database on a custom network so other services can resolve it by the name "user-db"
+    networks:
+      - user-service
+    # Periodically pings the database to ensure it's ready to accept connections before other services start relying on it
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
- 
+# Root-level declarations for the named volumes and networks used above
+volumes:
+  user-db-data:
+
+networks:
+  user-service:

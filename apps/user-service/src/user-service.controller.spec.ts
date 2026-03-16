@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserServiceController } from './user-service.controller';
 import { UserServiceService } from './user-service.service';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { User } from './entities/user.entity';
 
 describe('UserServiceController', () => {
   let userServiceController: UserServiceController;
@@ -8,7 +10,13 @@ describe('UserServiceController', () => {
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
       controllers: [UserServiceController],
-      providers: [UserServiceService],
+      providers: [
+        UserServiceService,
+        {
+          provide: getRepositoryToken(User),
+          useValue: {}, // mock repository
+        },
+      ],
     }).compile();
 
     userServiceController = app.get<UserServiceController>(
@@ -17,8 +25,10 @@ describe('UserServiceController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(userServiceController.getHello()).toBe('Hello World!');
+    it('should return "User Service with TypeORM!"', () => {
+      expect(userServiceController.getHello()).toBe(
+        'User Service with TypeORM!',
+      );
     });
   });
 });

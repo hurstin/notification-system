@@ -9,7 +9,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
   constructor(private authService: AuthService) {
     super();
   }
-// NEED TO BE FIXED 14
+  // NEED TO BE FIXED 14
   async validate(username: string, password: string): Promise<AuthUserDto> {
     const user = await this.authService.validateUser(username, password);
     if (!user) {

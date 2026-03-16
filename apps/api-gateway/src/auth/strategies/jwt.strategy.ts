@@ -12,7 +12,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       secretOrKey: process.env.JWT_SECRET || 'super_secret_key_123', // In a real app, use ConfigService
     });
   }
-// NEED TO BE FIXED 4
+  // NEED TO BE FIXED 4
   validate(payload: JwtPayloadDto) {
     // This payload is the decoded JWT. What we return is attached to the Request as req.user
     return { userId: payload.sub, username: payload.username };
