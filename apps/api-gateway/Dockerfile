@@ -23,7 +23,7 @@ RUN chown -R app:app /usr/src/app
 USER app
 
 # Install app dependencies
-RUN npm install
+RUN npm ci --prefer-offline --no-audit --no-fund
 
 # Bundle app source
 COPY . .
