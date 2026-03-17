@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { User } from './entities/user.entity';
 import { UserServiceController } from './user-service.controller';
 import { UserServiceService } from './user-service.service';
+import { MailerModule } from '@nestjs-modules/mailer';
 
 @Module({
   imports: [
@@ -28,6 +29,23 @@ import { UserServiceService } from './user-service.service';
       inject: [ConfigService],
     }),
     TypeOrmModule.forFeature([User]),
+    MailerModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        transport: {
+          host: configService.get<string>('SMTP_HOST'),
+          port: parseInt(configService.get<string>('SMTP_PORT') || '2525', 10),
+          auth: {
+            user: configService.get<string>('SMTP_USER'),
+            pass: configService.get<string>('SMTP_PASS'),
+          },
+        },
+        defaults: {
+          from: '"No Reply" <noreply@notificationsystem.com>',
+        },
+      }),
+      inject: [ConfigService],
+    }),
   ],
   controllers: [UserServiceController],
   providers: [UserServiceService],

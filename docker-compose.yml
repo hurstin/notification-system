@@ -34,6 +34,11 @@ services:
       - DB_USERNAME=postgres
       - DB_PASSWORD=postgres
       - DB_DATABASE=user-db
+      # Mailtrap SMTP configuration
+      - SMTP_HOST=sandbox.smtp.mailtrap.io
+      - SMTP_PORT=2525
+      - SMTP_USER=e276d8beec1d40  # TODO: Replace with actual Mailtrap username
+      - SMTP_PASS=145e471a4069b2  # TODO: Replace with actual Mailtrap password
     networks:
       - user-service
     depends_on:

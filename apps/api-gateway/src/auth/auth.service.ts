@@ -1,7 +1,7 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, HttpException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, catchError, throwError } from 'rxjs';
 import { AuthUserDto } from './dto/auth-user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 
@@ -50,6 +50,17 @@ export class AuthService {
   }
 
   register(createUserDto: CreateUserDto) {
-    return this.client.send({ cmd: 'create_user' }, createUserDto);
+    return this.client.send({ cmd: 'create_user' }, createUserDto).pipe(
+      catchError((error: { message: string; status: number }) => {
+        // Intercept the RPC Exception and re-throw as an HTTP Exception
+        return throwError(
+          () =>
+            new HttpException(
+              error.message || 'Internal server error',
+              error.status || 500,
+            ),
+        );
+      }),
+    );
   }
 }

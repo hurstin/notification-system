@@ -21,6 +21,11 @@ interface RequestWithUser {
 export class AuthController {
   constructor(private authService: AuthService) {}
 
+  @Post('register')
+  register(@Body() createUserDto: CreateUserDto) {
+    return this.authService.register(createUserDto);
+  }
+
   @UseGuards(LocalAuthGuard)
   @Post('login')
   // NEED TO BE FIXED 1
@@ -38,8 +43,11 @@ export class AuthController {
     return req.user;
   }
 
-  @Post('register')
-  register(@Body() createUserDto: CreateUserDto) {
-    return this.authService.register(createUserDto);
-  }
+  // verify email
+
+  // update password
+
+  // forgot password
+
+  // reset password
 }
