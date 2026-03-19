@@ -5,6 +5,7 @@ import {
   Request,
   Get,
   Body,
+  Query,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
@@ -44,6 +45,10 @@ export class AuthController {
   }
 
   // verify email
+  @Get('verify')
+  verifyEmail(@Query('token') token: string) {
+    return this.authService.verifyEmail(token);
+  }
 
   // update password
 

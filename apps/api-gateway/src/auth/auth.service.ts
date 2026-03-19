@@ -12,21 +12,13 @@ export class AuthService {
     @Inject('USER_SERVICE') private client: ClientProxy, // Microservice TCP Client
   ) {}
   // NEED TO BE FIXED 7
-  async validateUser(
-    username: string,
-    pass: string,
-  ): Promise<AuthUserDto | null> {
+  async validateUser(email: string, pass: string): Promise<AuthUserDto | null> {
     try {
-      console.log(`[API Gateway] Attempting to validate user: ${username}`);
+      console.log(`[API Gateway] Attempting to validate user: ${email}`);
       // NEED TO BE FIXED 8
       const user = await firstValueFrom<AuthUserDto & { password?: string }>(
-        this.client.send(
-          { cmd: 'verify_user_credentials' },
-          { username, pass },
-        ),
+        this.client.send({ cmd: 'verify_user_credentials' }, { email, pass }),
       );
-
-      console.log(`[API Gateway] Received response from user-service:`, user);
 
       if (user) {
         // Strip out the password if it returned the full user
@@ -43,7 +35,7 @@ export class AuthService {
   }
   // NEED TO BE FIXED 9
   login(user: AuthUserDto) {
-    const payload = { username: user.username, sub: user.userId || user.id };
+    const payload = { email: user.email, sub: user.userId };
     return {
       access_token: this.jwtService.sign(payload),
     };
@@ -53,6 +45,20 @@ export class AuthService {
     return this.client.send({ cmd: 'create_user' }, createUserDto).pipe(
       catchError((error: { message: string; status: number }) => {
         // Intercept the RPC Exception and re-throw as an HTTP Exception
+        return throwError(
+          () =>
+            new HttpException(
+              error.message || 'Internal server error',
+              error.status || 500,
+            ),
+        );
+      }),
+    );
+  }
+
+  verifyEmail(token: string) {
+    return this.client.send({ cmd: 'verify_email' }, token).pipe(
+      catchError((error: { message: string; status: number }) => {
         return throwError(
           () =>
             new HttpException(

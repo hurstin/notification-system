@@ -14,9 +14,14 @@ export class UserServiceController {
 
   @MessagePattern({ cmd: 'verify_user_credentials' })
   async verifyUser(
-    @Payload() data: { username: string; pass: string },
+    @Payload() data: { email: string; pass: string },
   ): Promise<Record<string, unknown> | null> {
-    return this.userServiceService.verifyCredentials(data.username, data.pass);
+    return this.userServiceService.verifyCredentials(data.email, data.pass);
+  }
+
+  @MessagePattern({ cmd: 'verify_email' })
+  async verifyEmail(@Payload() token: string) {
+    return this.userServiceService.verifyEmail(token);
   }
 
   @Get()
