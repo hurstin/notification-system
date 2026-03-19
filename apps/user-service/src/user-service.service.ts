@@ -80,14 +80,44 @@ export class UserServiceService {
     return this.usersRepository.findOneBy({ email });
   }
 
+  async verifyEmail(token: string) {
+    const user = await this.usersRepository.findOneBy({
+      emailVerificationToken: token,
+    });
+    if (!user) {
+      throw new RpcException({ status: 404, message: 'Invalid token' });
+    }
+    if (user.isEmailVerified) {
+      throw new RpcException({
+        status: 400,
+        message: 'Email already verified',
+      });
+    }
+
+    // check if token has expired
+    if (!user.emailVerificationTokenExpires) {
+      throw new RpcException({
+        status: 400,
+        message: 'Verification token has no expiration date.',
+      });
+    }
+    if (user.emailVerificationTokenExpires < new Date()) {
+      throw new RpcException({ status: 400, message: 'Token expired' });
+    }
+    user.isEmailVerified = true;
+    user.emailVerificationToken = null;
+    user.emailVerificationTokenExpires = null;
+    await this.usersRepository.save(user);
+    return { message: 'Email verified successfully' };
+  }
+
   async verifyCredentials(
     email: string,
     pass: string,
   ): Promise<Record<string, unknown> | null> {
     const user = await this.findByEmail(email);
-    // Note: Assuming pass is stored unhashed for this exact iteration
-    // since we do NOT have bcrypt right now in this exact file if it was reverted
-    if (user && user.password === pass) {
+
+    if (user && (await bcrypt.compare(pass, user.password))) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password, ...result } = user;
       return result;

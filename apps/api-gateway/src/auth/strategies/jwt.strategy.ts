@@ -15,6 +15,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   // NEED TO BE FIXED 4
   validate(payload: JwtPayloadDto) {
     // This payload is the decoded JWT. What we return is attached to the Request as req.user
-    return { userId: payload.sub, username: payload.username };
+    return { userId: payload.sub, email: payload.email };
   }
 }
