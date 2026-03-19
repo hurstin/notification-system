@@ -96,4 +96,77 @@ describe('UserServiceService', () => {
       expect(result).toBeNull();
     });
   });
+
+  describe('updatePassword', () => {
+    it('should update password if current password is valid', async () => {
+      repository.findOneBy.mockResolvedValue(mockUser);
+      jest.spyOn(bcrypt, 'compare').mockResolvedValue(true as never);
+      jest.spyOn(bcrypt, 'genSalt').mockResolvedValue('salt' as never);
+      jest
+        .spyOn(bcrypt, 'hash')
+        .mockResolvedValue('new_hashed_password' as never);
+
+      const result = await service.updatePassword(1, {
+        currentPassword: 'old',
+        newPassword: 'new',
+        confirmPassword: 'new',
+      });
+
+      expect(result).toEqual({ message: 'Password updated successfully' });
+      expect(repository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ password: 'new_hashed_password' }),
+      );
+    });
+
+    it('should throw error if user not found', async () => {
+      repository.findOneBy.mockResolvedValue(null);
+
+      await expect(
+        service.updatePassword(1, {
+          currentPassword: 'old',
+          newPassword: 'new',
+          confirmPassword: 'new',
+        }),
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('forgotPassword', () => {
+    it('should generate reset token and send email', async () => {
+      repository.findOneBy.mockResolvedValue(mockUser);
+      const mailerService = (
+        service as unknown as { mailerService: MailerService }
+      ).mailerService;
+
+      const result = await service.forgotPassword('test@test.com');
+
+      expect(result.message).toBe('Reset token sent to email');
+      expect(repository.save).toHaveBeenCalled();
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(mailerService.sendMail).toHaveBeenCalled();
+    });
+  });
+
+  describe('resetPassword', () => {
+    it('should reset password with a valid token', async () => {
+      const userWithToken = {
+        ...mockUser,
+        passwordResetToken: 'token123',
+        passwordResetTokenExpires: new Date(Date.now() + 3600000),
+      };
+      repository.findOneBy.mockResolvedValue(userWithToken);
+      jest.spyOn(bcrypt, 'compare').mockResolvedValue(false as never); // Different from old password
+      jest.spyOn(bcrypt, 'hash').mockResolvedValue('new_hashed' as never);
+
+      const result = await service.resetPassword('token123', {
+        newPassword: 'new',
+        confirmPassword: 'new',
+      });
+
+      expect(result).toEqual({ message: 'Password reset successfully' });
+      expect(repository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ password: 'new_hashed' }),
+      );
+    });
+  });
 });
