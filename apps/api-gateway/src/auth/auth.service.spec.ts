@@ -91,4 +91,58 @@ describe('AuthService', () => {
       });
     });
   });
+
+  describe('updatePassword', () => {
+    it('should send update_password command to user-service', (done) => {
+      const userId = 1;
+      const body = {
+        currentPassword: 'old',
+        newPassword: 'new',
+        confirmPassword: 'new',
+      };
+      client.send.mockReturnValue(of({ message: 'Success' }));
+
+      service.updatePassword(userId, body).subscribe((result) => {
+        expect(result).toEqual({ message: 'Success' });
+        expect(client.send).toHaveBeenCalledWith(
+          { cmd: 'update_password' },
+          { userId, body },
+        );
+        done();
+      });
+    });
+  });
+
+  describe('forgotPassword', () => {
+    it('should send forgot_password command to user-service', (done) => {
+      const email = 'test@test.com';
+      client.send.mockReturnValue(of({ message: 'Email sent' }));
+
+      service.forgotPassword(email).subscribe((result) => {
+        expect(result).toEqual({ message: 'Email sent' });
+        expect(client.send).toHaveBeenCalledWith(
+          { cmd: 'forgot_password' },
+          email,
+        );
+        done();
+      });
+    });
+  });
+
+  describe('resetPassword', () => {
+    it('should send reset_password command to user-service', (done) => {
+      const token = 'token123';
+      const body = { newPassword: 'new', confirmPassword: 'new' };
+      client.send.mockReturnValue(of({ message: 'Success' }));
+
+      service.resetPassword(token, body).subscribe((result) => {
+        expect(result).toEqual({ message: 'Success' });
+        expect(client.send).toHaveBeenCalledWith(
+          { cmd: 'reset_password' },
+          { token, body },
+        );
+        done();
+      });
+    });
+  });
 });

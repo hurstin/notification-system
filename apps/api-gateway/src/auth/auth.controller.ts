@@ -6,12 +6,16 @@ import {
   Get,
   Body,
   Query,
+  Patch,
+  Param,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { AuthUserDto } from './dto/auth-user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdatePasswordDto } from './dto/updatePassword.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 // NEED TO BE FIXED 3
 interface RequestWithUser {
@@ -51,8 +55,24 @@ export class AuthController {
   }
 
   // update password
+  @UseGuards(JwtAuthGuard)
+  @Patch('update-password')
+  updatePassword(
+    @Request() req: RequestWithUser,
+    @Body() body: UpdatePasswordDto,
+  ) {
+    return this.authService.updatePassword(req.user.userId, body);
+  }
 
   // forgot password
+  @Post('forgot-password')
+  forgotPassword(@Body() body: { email: string }) {
+    return this.authService.forgotPassword(body.email);
+  }
 
   // reset password
+  @Patch('reset-password/:token')
+  resetPassword(@Param('token') token: string, @Body() body: ResetPasswordDto) {
+    return this.authService.resetPassword(token, body);
+  }
 }

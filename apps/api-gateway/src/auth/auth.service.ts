@@ -4,6 +4,8 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, catchError, throwError } from 'rxjs';
 import { AuthUserDto } from './dto/auth-user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdatePasswordDto } from './dto/updatePassword.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -58,6 +60,48 @@ export class AuthService {
 
   verifyEmail(token: string) {
     return this.client.send({ cmd: 'verify_email' }, token).pipe(
+      catchError((error: { message: string; status: number }) => {
+        return throwError(
+          () =>
+            new HttpException(
+              error.message || 'Internal server error',
+              error.status || 500,
+            ),
+        );
+      }),
+    );
+  }
+
+  updatePassword(userId: number, body: UpdatePasswordDto) {
+    return this.client.send({ cmd: 'update_password' }, { userId, body }).pipe(
+      catchError((error: { message: string; status: number }) => {
+        return throwError(
+          () =>
+            new HttpException(
+              error.message || 'Internal server error',
+              error.status || 500,
+            ),
+        );
+      }),
+    );
+  }
+
+  forgotPassword(email: string) {
+    return this.client.send({ cmd: 'forgot_password' }, email).pipe(
+      catchError((error: { message: string; status: number }) => {
+        return throwError(
+          () =>
+            new HttpException(
+              error.message || 'Internal server error',
+              error.status || 500,
+            ),
+        );
+      }),
+    );
+  }
+
+  resetPassword(token: string, body: ResetPasswordDto) {
+    return this.client.send({ cmd: 'reset_password' }, { token, body }).pipe(
       catchError((error: { message: string; status: number }) => {
         return throwError(
           () =>

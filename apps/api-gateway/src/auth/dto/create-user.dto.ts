@@ -1,4 +1,5 @@
-import { Equals, IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { Match } from '../../common/decorators/match.decorator';
 
 export class CreateUserDto {
   @IsString()
@@ -15,6 +16,6 @@ export class CreateUserDto {
 
   @IsString()
   @IsNotEmpty()
-  @Equals('password', { message: 'Password and confirm password do not match' })
+  @Match('password', { message: 'Password and confirm password do not match' })
   passwordConfirm: string;
 }
