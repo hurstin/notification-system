@@ -56,4 +56,24 @@ export class UserServiceController {
       data.updateProfileDto,
     );
   }
+
+  @MessagePattern({ cmd: 'delete_user' })
+  async deleteMe(@Payload() user: UserDto) {
+    return this.userServiceService.deleteMe(user);
+  }
+
+  @MessagePattern({ cmd: 'get_user_profile' })
+  async getUserProfile(@Payload() user: UserDto) {
+    return this.userServiceService.getUserProfile(user);
+  }
+
+  @MessagePattern({ cmd: 'get_all_users' })
+  async getAllUsers() {
+    return this.userServiceService.getAllUsers();
+  }
+
+  @MessagePattern({ cmd: 'resend_verification_email' })
+  async resendVerificationEmail(@Payload() user: UserDto) {
+    return this.userServiceService.resendVerificationEmail(user);
+  }
 }

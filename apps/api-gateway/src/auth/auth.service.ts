@@ -101,6 +101,20 @@ export class AuthService {
     );
   }
 
+  resendVerificationEmail(user: AuthUserDto) {
+    return this.client.send({ cmd: 'resend_verification_email' }, user).pipe(
+      catchError((error: { message: string; status: number }) => {
+        return throwError(
+          () =>
+            new HttpException(
+              error.message || 'Internal server error',
+              error.status || 500,
+            ),
+        );
+      }),
+    );
+  }
+
   updatePassword(userId: number, body: UpdatePasswordDto) {
     return this.client.send({ cmd: 'update_password' }, { userId, body }).pipe(
       catchError((error: { message: string; status: number }) => {

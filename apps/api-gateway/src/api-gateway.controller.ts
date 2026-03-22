@@ -1,4 +1,12 @@
-import { Body, Controller, Patch, Request, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Patch,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiGatewayService } from './api-gateway.service';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { AuthUserDto } from './auth/dto/auth-user.dto';
@@ -23,8 +31,23 @@ export class ApiGatewayController {
   }
 
   // delete user
+  @UseGuards(JwtAuthGuard)
+  @Delete('delete-me')
+  deleteMe(@Request() req: RequestWithUser) {
+    return this.apiGatewayService.deleteMe(req.user);
+  }
 
   // get user profile
+  @UseGuards(JwtAuthGuard)
+  @Get('profile')
+  getUserProfile(@Request() req: RequestWithUser) {
+    return this.apiGatewayService.getUserProfile(req.user);
+  }
 
   // get all users
+  @UseGuards(JwtAuthGuard)
+  @Get()
+  getAllUsers() {
+    return this.apiGatewayService.getAllUsers();
+  }
 }
