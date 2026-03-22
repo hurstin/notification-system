@@ -10,6 +10,8 @@ import { v4 as uuidv4 } from 'uuid'; // npm install uuid
 import { addHours } from 'date-fns'; // npm i date-fns
 import { UpdatePasswordDto } from 'apps/api-gateway/src/auth/dto/updatePassword.dto';
 import { ResetPasswordDto } from 'apps/api-gateway/src/auth/dto/reset-password.dto';
+import { UserDto } from './dto/user.dto';
+import { UpdateUserDto } from 'apps/api-gateway/src/auth/dto/update-user.dto';
 
 @Injectable()
 export class UserServiceService {
@@ -248,7 +250,28 @@ export class UserServiceService {
     return { message: 'Password reset successfully' };
   }
 
-  getHello(): string {
-    return 'User Service with TypeORM!';
+  async updateProfile(user: UserDto, updateProfileDto: UpdateUserDto) {
+    const existingUser = await this.usersRepository.findOneBy({
+      userId: user.userId,
+    });
+    if (!existingUser) {
+      throw new RpcException({ status: 404, message: 'User not found' });
+    }
+    if (existingUser.email !== updateProfileDto.email) {
+      const existingUserWithSameEmail = await this.usersRepository.findOneBy({
+        email: updateProfileDto.email,
+      });
+      if (existingUserWithSameEmail) {
+        throw new RpcException({
+          status: 400,
+          message: 'Email already exists',
+        });
+      }
+    }
+
+    existingUser.name = updateProfileDto.name;
+    existingUser.email = updateProfileDto.email;
+    await this.usersRepository.save(existingUser);
+    return { message: 'Profile updated successfully' };
   }
 }

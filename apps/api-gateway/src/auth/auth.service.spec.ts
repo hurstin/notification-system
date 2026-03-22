@@ -6,24 +6,35 @@ import { of } from 'rxjs';
 describe('AuthService', () => {
   let service: AuthService;
   let jwtService: JwtService;
+  let module: TestingModule;
   let client: {
     send: jest.Mock;
   };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    module = await Test.createTestingModule({
       providers: [
         AuthService,
         {
           provide: JwtService,
           useValue: {
             sign: jest.fn().mockReturnValue('mock_token'),
+            decode: jest
+              .fn()
+              .mockReturnValue({ exp: Math.floor(Date.now() / 1000) + 3600 }),
           },
         },
         {
           provide: 'USER_SERVICE',
           useValue: {
             send: jest.fn(),
+          },
+        },
+        {
+          provide: 'REDIS_CLIENT',
+          useValue: {
+            set: jest.fn().mockResolvedValue('OK'),
+            get: jest.fn(),
           },
         },
       ],
@@ -79,11 +90,14 @@ describe('AuthService', () => {
   });
 
   describe('login', () => {
-    it('should return an access token', () => {
+    it('should return an access token and user email', () => {
       const user = { userId: 1, email: 'test@test.com' };
       const result = service.login(user);
 
-      expect(result).toEqual({ access_token: 'mock_token' });
+      expect(result).toEqual({
+        user: 'test@test.com',
+        access_token: 'mock_token',
+      });
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(jwtService.sign).toHaveBeenCalledWith({
         email: 'test@test.com',
@@ -142,6 +156,30 @@ describe('AuthService', () => {
           { token, body },
         );
         done();
+      });
+    });
+  });
+  describe('logout', () => {
+    it('should blacklist the token in Redis if provided', async () => {
+      const user = { userId: 1, email: 'test@test.com' };
+      const token = 'mock_token';
+      const redisClient = module.get<{ set: jest.Mock }>('REDIS_CLIENT');
+
+      const result = await service.logout(user, token);
+
+      expect(result).toEqual({
+        message: 'test@test.com logged out successfully.',
+      });
+
+      expect(redisClient.set).toHaveBeenCalled();
+    });
+
+    it('should still logout if no token is provided', async () => {
+      const user = { userId: 1, email: 'test@test.com' };
+      const result = await service.logout(user);
+
+      expect(result).toEqual({
+        message: 'test@test.com logged out successfully.',
       });
     });
   });
