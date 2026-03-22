@@ -274,4 +274,79 @@ export class UserServiceService {
     await this.usersRepository.save(existingUser);
     return { message: 'Profile updated successfully' };
   }
+
+  async deleteMe(user: UserDto) {
+    const existingUser = await this.usersRepository.findOneBy({
+      userId: user.userId,
+    });
+    if (!existingUser) {
+      throw new RpcException({ status: 404, message: 'User not found' });
+    }
+    await this.usersRepository.remove(existingUser);
+
+    return { message: 'User deleted successfully' };
+  }
+
+  async getUserProfile(user: UserDto) {
+    const existingUser = await this.usersRepository.findOneBy({
+      userId: user.userId,
+    });
+    if (!existingUser) {
+      throw new RpcException({ status: 404, message: 'User not found' });
+    }
+    return {
+      userId: existingUser.userId,
+      name: existingUser.name,
+      email: existingUser.email,
+      isEmailVerified: existingUser.isEmailVerified,
+    };
+  }
+
+  async getAllUsers() {
+    const users = await this.usersRepository.find();
+    return users.map((user) => {
+      return {
+        userId: user.userId,
+        name: user.name,
+        email: user.email,
+        isEmailVerified: user.isEmailVerified,
+      };
+    });
+  }
+
+  async resendVerificationEmail(user: UserDto) {
+    const existingUser = await this.usersRepository.findOneBy({
+      userId: user.userId,
+    });
+    if (!existingUser) {
+      throw new RpcException({ status: 404, message: 'User not found' });
+    }
+    if (existingUser.isEmailVerified) {
+      throw new RpcException({
+        status: 400,
+        message: 'Email already verified',
+      });
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    const verificationToken = uuidv4() as string;
+    const verificationTokenExpires = addHours(new Date(), 1);
+    existingUser.emailVerificationToken = verificationToken;
+    existingUser.emailVerificationTokenExpires = verificationTokenExpires;
+
+    await this.mailerService.sendMail({
+      to: existingUser.email,
+      subject: 'Verify your email',
+      html: `
+        <h3>Verify your email</h3>
+        <p>Please click the link below to verify your email:</p>
+        <p>
+          <a href="http://localhost:3000/auth/verify-email?token=${verificationToken}">Verify Email</a>
+        </p>
+        <p>This token expires in 1 hour.</p>
+      `,
+    });
+    await this.usersRepository.save(existingUser);
+    return { message: 'Verification email sent successfully' };
+  }
 }

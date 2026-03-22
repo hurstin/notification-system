@@ -56,6 +56,11 @@ export class AuthController {
   // refresh token
 
   // resend verification email
+  @UseGuards(JwtAuthGuard)
+  @Post('resend-verification-email')
+  resendVerificationEmail(@Request() req: RequestWithUser) {
+    return this.authService.resendVerificationEmail(req.user);
+  }
 
   // Example Protected Route
   @UseGuards(JwtAuthGuard)
