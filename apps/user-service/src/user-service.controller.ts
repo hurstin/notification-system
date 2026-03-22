@@ -1,9 +1,11 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { UserServiceService } from './user-service.service';
 import { CreateUserDto } from 'apps/api-gateway/src/auth/dto/create-user.dto';
 import { UpdatePasswordDto } from 'apps/api-gateway/src/auth/dto/updatePassword.dto';
 import { ResetPasswordDto } from 'apps/api-gateway/src/auth/dto/reset-password.dto';
+import { UserDto } from './dto/user.dto';
+import { UpdateUserDto } from 'apps/api-gateway/src/auth/dto/update-user.dto';
 
 @Controller()
 export class UserServiceController {
@@ -45,8 +47,13 @@ export class UserServiceController {
     return this.userServiceService.resetPassword(data.token, data.body);
   }
 
-  @Get()
-  getHello(): string {
-    return this.userServiceService.getHello();
+  @MessagePattern({ cmd: 'update_user' })
+  async updateProfile(
+    @Payload() data: { user: UserDto; updateProfileDto: UpdateUserDto },
+  ) {
+    return this.userServiceService.updateProfile(
+      data.user,
+      data.updateProfileDto,
+    );
   }
 }

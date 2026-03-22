@@ -14,6 +14,11 @@ services:
     command: npm run start:dev api-gateway
     environment:
       - NODE_ENV=development
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      redis:
+        condition: service_healthy
     networks:
       - user-service
   user-service:
@@ -67,6 +72,19 @@ services:
     # Periodically pings the database to ensure it's ready to accept connections before other services start relying on it
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  # Redis Service for token blacklisting and caching
+  redis:
+    image: redis:7-alpine
+    container_name: redis-cache
+    ports:
+      - "6379:6379"
+    networks:
+      - user-service
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5

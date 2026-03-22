@@ -7,9 +7,29 @@ on:
     branches: [ "main" ]
 
 jobs:
-  # Job 1: Lint, Test, and Build for each service
+  # Job 1: Lint the entire monorepo
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Lint
+        run: npm run lint
+
+  # Job 2: Test and Build for each service
   build-and-test:
     runs-on: ubuntu-latest
+    needs: lint
     strategy:
       matrix:
         # List all your service folder names here
@@ -31,9 +51,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run Lint
-        run: npm run lint
-
       - name: Run Unit Tests
         # Run tests specifically for the matrix app target
         run: npx jest apps/${{ matrix.service }}
@@ -41,8 +58,7 @@ jobs:
       - name: Build Project
         run: npm run build ${{ matrix.service }}
 
-  # Job 2: Build Docker Images (Only runs if Job 1 passes)
-  # jobb
+  # Job 3: Build Docker Images (Only runs if Job 2 passes)
   docker-build:
     runs-on: ubuntu-latest
     needs: build-and-test

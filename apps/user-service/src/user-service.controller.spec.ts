@@ -31,11 +31,7 @@ describe('UserServiceController', () => {
     );
   });
 
-  describe('root', () => {
-    it('should return "User Service with TypeORM!"', () => {
-      expect(userServiceController.getHello()).toBe(
-        'User Service with TypeORM!',
-      );
-    });
+  it('should be defined', () => {
+    expect(userServiceController).toBeDefined();
   });
 });

@@ -8,15 +8,19 @@ describe('ApiGatewayController', () => {
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
       controllers: [ApiGatewayController],
-      providers: [ApiGatewayService],
+      providers: [
+        ApiGatewayService,
+        {
+          provide: 'USER_SERVICE',
+          useValue: {}, // mock client
+        },
+      ],
     }).compile();
 
     apiGatewayController = app.get<ApiGatewayController>(ApiGatewayController);
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(apiGatewayController.getHello()).toBe('Hello World!');
-    });
+  it('should be defined', () => {
+    expect(apiGatewayController).toBeDefined();
   });
 });
