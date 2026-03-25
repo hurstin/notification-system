@@ -39,6 +39,7 @@ services:
       - DB_USERNAME=postgres
       - DB_PASSWORD=postgres
       - DB_DATABASE=user-db
+      - RABBITMQ_URL=amqp://rabbitmq:5672
       # Mailtrap SMTP configuration
       - SMTP_HOST=sandbox.smtp.mailtrap.io
       - SMTP_PORT=2525
@@ -88,10 +89,51 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+  # RabbitMQ Service for asynchronous messaging
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    hostname: rabbitmq
+    ports:
+      - "5672:5672"   # AMQP protocol
+      - "15672:15672" # Management UI
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - user-service
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+      start_period: 30s
+  email-service:
+    build:
+      context: .
+      dockerfile: apps/email-service/Dockerfile
+      target: development
+    environment:
+      - NODE_ENV=development
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - SMTP_HOST=sandbox.smtp.mailtrap.io
+      - SMTP_PORT=2525
+      - SMTP_USER=e276d8beec1d40
+      - SMTP_PASS=145e471a4069b2
+      - SMTP_FROM=noreply@notification-system.com
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    command: npm run start:dev email-service
+    networks:
+      - user-service
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
 # Root-level declarations for the named volumes and networks used above
 volumes:
   user-db-data:
+  rabbitmq-data:
 
 networks:
   user-service:

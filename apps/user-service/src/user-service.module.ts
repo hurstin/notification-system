@@ -4,7 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { User } from './entities/user.entity';
 import { UserServiceController } from './user-service.controller';
 import { UserServiceService } from './user-service.service';
-import { MailerModule } from '@nestjs-modules/mailer';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
   imports: [
@@ -29,23 +29,28 @@ import { MailerModule } from '@nestjs-modules/mailer';
       inject: [ConfigService],
     }),
     TypeOrmModule.forFeature([User]),
-    MailerModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        transport: {
-          host: configService.get<string>('SMTP_HOST'),
-          port: parseInt(configService.get<string>('SMTP_PORT') || '2525', 10),
-          auth: {
-            user: configService.get<string>('SMTP_USER'),
-            pass: configService.get<string>('SMTP_PASS'),
+    ClientsModule.registerAsync([
+      {
+        name: 'EMAIL_SERVICE',
+        imports: [ConfigModule],
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.RMQ,
+          options: {
+            urls: [
+              configService.get<string>(
+                'RABBITMQ_URL',
+                'amqp://localhost:5672',
+              ),
+            ],
+            queue: 'email-queue',
+            queueOptions: {
+              durable: true,
+            },
           },
-        },
-        defaults: {
-          from: '"No Reply" <noreply@notificationsystem.com>',
-        },
-      }),
-      inject: [ConfigService],
-    }),
+        }),
+        inject: [ConfigService],
+      },
+    ]),
   ],
   controllers: [UserServiceController],
   providers: [UserServiceService],

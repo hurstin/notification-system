@@ -3,7 +3,6 @@ import { UserServiceController } from './user-service.controller';
 import { UserServiceService } from './user-service.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { MailerService } from '@nestjs-modules/mailer';
 
 describe('UserServiceController', () => {
   let userServiceController: UserServiceController;
@@ -18,9 +17,9 @@ describe('UserServiceController', () => {
           useValue: {}, // mock repository
         },
         {
-          provide: MailerService,
+          provide: 'EMAIL_SERVICE',
           useValue: {
-            sendMail: jest.fn(),
+            emit: jest.fn(),
           },
         },
       ],

@@ -2,7 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UserServiceService } from './user-service.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { MailerService } from '@nestjs-modules/mailer';
+import { ClientProxy } from '@nestjs/microservices';
+import { of } from 'rxjs';
 import * as bcrypt from 'bcrypt';
 
 describe('UserServiceService', () => {
@@ -32,9 +33,9 @@ describe('UserServiceService', () => {
           },
         },
         {
-          provide: MailerService,
+          provide: 'EMAIL_SERVICE',
           useValue: {
-            sendMail: jest.fn(),
+            emit: jest.fn().mockReturnValue(of({})),
           },
         },
       ],
@@ -134,16 +135,15 @@ describe('UserServiceService', () => {
   describe('forgotPassword', () => {
     it('should generate reset token and send email', async () => {
       repository.findOneBy.mockResolvedValue(mockUser);
-      const mailerService = (
-        service as unknown as { mailerService: MailerService }
-      ).mailerService;
-
+      const emailClient = (
+        service as unknown as { emailClient: ClientProxy }
+      ).emailClient;
+      
       const result = await service.forgotPassword('test@test.com');
 
       expect(result.message).toBe('Reset token sent to email');
       expect(repository.save).toHaveBeenCalled();
-      // eslint-disable-next-line @typescript-eslint/unbound-method
-      expect(mailerService.sendMail).toHaveBeenCalled();
+      expect(emailClient.emit).toHaveBeenCalledWith('send_email', expect.any(Object));
     });
   });
 
