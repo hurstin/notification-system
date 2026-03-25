@@ -135,15 +135,18 @@ describe('UserServiceService', () => {
   describe('forgotPassword', () => {
     it('should generate reset token and send email', async () => {
       repository.findOneBy.mockResolvedValue(mockUser);
-      const emailClient = (
-        service as unknown as { emailClient: ClientProxy }
-      ).emailClient;
-      
+      const emailClient = (service as unknown as { emailClient: ClientProxy })
+        .emailClient;
+
       const result = await service.forgotPassword('test@test.com');
 
       expect(result.message).toBe('Reset token sent to email');
       expect(repository.save).toHaveBeenCalled();
-      expect(emailClient.emit).toHaveBeenCalledWith('send_email', expect.any(Object));
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(emailClient.emit).toHaveBeenCalledWith(
+        'send_email',
+        expect.any(Object),
+      );
     });
   });
 
