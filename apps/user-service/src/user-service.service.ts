@@ -1,6 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { MailerService } from '@nestjs-modules/mailer';
-import { RpcException } from '@nestjs/microservices';
+import { Inject, Injectable } from '@nestjs/common';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
@@ -18,7 +17,7 @@ export class UserServiceService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
-    private mailerService: MailerService,
+    @Inject('EMAIL_SERVICE') private readonly emailClient: ClientProxy,
   ) {}
 
   async createUser(
@@ -48,18 +47,14 @@ export class UserServiceService {
     });
 
     // send verification token to email
-
-    await this.mailerService.sendMail({
+    this.emailClient.emit('send_email', {
       to: user.email,
       subject: 'Welcome to Notification System! Confirm your Email',
-      html: `
-        <h3>Welcome ${user.name}!</h3>
-        <p>Please click the link below to verify your email address:</p>
-        <p>
-          <a href="http://localhost:3000/auth/verify?token=${emailToken}">Verify Email</a>
-        </p>
-        <p>This token expires in 1 hour.</p>
-      `,
+      template: 'welcome',
+      context: {
+        name: user.name,
+        url: `http://localhost:3000/auth/verify?token=${emailToken}`,
+      },
     });
 
     // save user
@@ -183,17 +178,14 @@ export class UserServiceService {
     await this.usersRepository.save(user);
 
     // send reset token to email
-    await this.mailerService.sendMail({
+    this.emailClient.emit('send_email', {
       to: user.email,
       subject: 'Reset Password',
-      html: `
-        <h3>Reset Password</h3>
-        <p>Please click the link below to reset your password:</p>
-        <p>
-          <a href="http://localhost:3000/auth/reset-password?token=${resetToken}">Reset Password</a>
-        </p>
-        <p>This token expires in 1 hour.</p>
-      `,
+      template: 'welcome', // for now use welcome or create a separate one
+      context: {
+        name: user.name,
+        url: `http://localhost:3000/auth/reset-password?token=${resetToken}`,
+      },
     });
 
     // return success message
@@ -334,17 +326,14 @@ export class UserServiceService {
     existingUser.emailVerificationToken = verificationToken;
     existingUser.emailVerificationTokenExpires = verificationTokenExpires;
 
-    await this.mailerService.sendMail({
+    this.emailClient.emit('send_email', {
       to: existingUser.email,
       subject: 'Verify your email',
-      html: `
-        <h3>Verify your email</h3>
-        <p>Please click the link below to verify your email:</p>
-        <p>
-          <a href="http://localhost:3000/auth/verify-email?token=${verificationToken}">Verify Email</a>
-        </p>
-        <p>This token expires in 1 hour.</p>
-      `,
+      template: 'welcome',
+      context: {
+        name: existingUser.name,
+        url: `http://localhost:3000/auth/verify-email?token=${verificationToken}`,
+      },
     });
     await this.usersRepository.save(existingUser);
     return { message: 'Verification email sent successfully' };
