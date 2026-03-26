@@ -33,7 +33,7 @@ jobs:
     strategy:
       matrix:
         # List all your service folder names here
-        service: [api-gateway, user-service]
+        service: [api-gateway, user-service, email-service]
     
     steps:
       - name: Checkout code
@@ -64,7 +64,7 @@ jobs:
     needs: build-and-test
     strategy:
       matrix:
-        service: [api-gateway, user-service]
+        service: [api-gateway, user-service, email-service]
 
     steps:
       - name: Checkout code
@@ -80,7 +80,7 @@ jobs:
           context: .
           file: apps/${{ matrix.service }}/Dockerfile
           push: false # Set to true once you add a Registry Login step
-          tags: my-app/${{ matrix.service }}:latest
+          tags: notification-app/${{ matrix.service }}:latest
           # This speeds up subsequent builds
           cache-from: type=gha
           cache-to: type=gha,mode=max
