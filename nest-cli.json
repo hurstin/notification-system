@@ -28,6 +28,15 @@
         "tsConfigPath": "apps/email-service/tsconfig.app.json"
       }
     },
+    "push-service": {
+      "type": "application",
+      "root": "apps/push-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/push-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/push-service/tsconfig.app.json"
+      }
+    },
     "user-service": {
       "type": "application",
       "root": "apps/user-service",

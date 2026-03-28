@@ -130,6 +130,27 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  push-service:
+    build:
+      context: .
+      dockerfile: apps/push-service/Dockerfile
+      target: development
+    environment:
+      - NODE_ENV=development
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - FCM_PROJECT_ID=${FCM_PROJECT_ID}
+      - FCM_CLIENT_EMAIL=${FCM_CLIENT_EMAIL}
+      - FCM_PRIVATE_KEY=${FCM_PRIVATE_KEY}
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    command: npm run start:dev push-service
+    networks:
+      - user-service
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
 # Root-level declarations for the named volumes and networks used above
 volumes:
   user-db-data:
