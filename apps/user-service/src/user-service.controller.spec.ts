@@ -22,6 +22,12 @@ describe('UserServiceController', () => {
             emit: jest.fn(),
           },
         },
+        {
+          provide: 'PUSH_SERVICE',
+          useValue: {
+            emit: jest.fn(),
+          },
+        },
       ],
     }).compile();
 

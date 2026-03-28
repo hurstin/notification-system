@@ -38,6 +38,12 @@ describe('UserServiceService', () => {
             emit: jest.fn().mockReturnValue(of({})),
           },
         },
+        {
+          provide: 'PUSH_SERVICE',
+          useValue: {
+            emit: jest.fn().mockReturnValue(of({})),
+          },
+        },
       ],
     }).compile();
 

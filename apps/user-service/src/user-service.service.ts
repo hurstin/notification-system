@@ -18,6 +18,7 @@ export class UserServiceService {
     @InjectRepository(User)
     private usersRepository: Repository<User>,
     @Inject('EMAIL_SERVICE') private readonly emailClient: ClientProxy,
+    @Inject('PUSH_SERVICE') private readonly pushClient: ClientProxy,
   ) {}
 
   async createUser(
@@ -286,6 +287,13 @@ export class UserServiceService {
     if (!existingUser) {
       throw new RpcException({ status: 404, message: 'User not found' });
     }
+
+    this.pushClient.emit('send_push', {
+      tokens: ['TOKEN_123'],
+      title: 'Profile viewed',
+      body: 'Your profile',
+    });
+
     return {
       userId: existingUser.userId,
       name: existingUser.name,
