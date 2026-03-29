@@ -1,6 +1,9 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { UserServiceService } from './user-service.service';
+import {
+  UpdateNotificationPreferenceDto,
+  UserServiceService,
+} from './user-service.service';
 import { CreateUserDto } from 'apps/api-gateway/src/auth/dto/create-user.dto';
 import { UpdatePasswordDto } from 'apps/api-gateway/src/auth/dto/updatePassword.dto';
 import { ResetPasswordDto } from 'apps/api-gateway/src/auth/dto/reset-password.dto';
@@ -75,5 +78,24 @@ export class UserServiceController {
   @MessagePattern({ cmd: 'resend_verification_email' })
   async resendVerificationEmail(@Payload() user: UserDto) {
     return this.userServiceService.resendVerificationEmail(user);
+  }
+
+  @MessagePattern({ cmd: 'get_notification_preferences' })
+  async getNotificationPreferences(@Payload() userId: number) {
+    return this.userServiceService.getNotificationPreferences(userId);
+  }
+
+  @MessagePattern({ cmd: 'update_notification_preferences' })
+  async updateNotificationPreferences(
+    @Payload()
+    data: {
+      userId: number;
+      preferences: UpdateNotificationPreferenceDto;
+    },
+  ) {
+    return this.userServiceService.updateNotificationPreferences(
+      data.userId,
+      data.preferences,
+    );
   }
 }

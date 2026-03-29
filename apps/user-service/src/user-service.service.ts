@@ -3,6 +3,7 @@ import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
+import { NotificationPreference } from './entities/notification-preference.entity';
 import { CreateUserDto } from 'apps/api-gateway/src/auth/dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid'; // npm install uuid
@@ -12,11 +13,18 @@ import { ResetPasswordDto } from 'apps/api-gateway/src/auth/dto/reset-password.d
 import { UserDto } from './dto/user.dto';
 import { UpdateUserDto } from 'apps/api-gateway/src/auth/dto/update-user.dto';
 
+export class UpdateNotificationPreferenceDto {
+  emailEnabled?: boolean;
+  pushEnabled?: boolean;
+}
+
 @Injectable()
 export class UserServiceService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    @InjectRepository(NotificationPreference)
+    private preferenceRepository: Repository<NotificationPreference>,
     @Inject('EMAIL_SERVICE') private readonly emailClient: ClientProxy,
     @Inject('PUSH_SERVICE') private readonly pushClient: ClientProxy,
   ) {}
@@ -45,6 +53,7 @@ export class UserServiceService {
       isEmailVerified: false,
       emailVerificationToken: String(emailToken),
       emailVerificationTokenExpires: new Date(tokenExpires),
+      notificationPreference: this.preferenceRepository.create(), // Default preferences
     });
 
     // send verification token to email
@@ -69,6 +78,7 @@ export class UserServiceService {
       name: savedUser.name,
       email: savedUser.email,
       isEmailVerified: savedUser.isEmailVerified,
+      notificationPreference: savedUser.notificationPreference,
     };
     return {
       newUser,
@@ -345,5 +355,30 @@ export class UserServiceService {
     });
     await this.usersRepository.save(existingUser);
     return { message: 'Verification email sent successfully' };
+  }
+
+  async getNotificationPreferences(userId: number) {
+    const preferences = await this.preferenceRepository.findOne({
+      where: { user: { userId } },
+    });
+    if (!preferences) {
+      throw new RpcException({ status: 404, message: 'Preferences not found' });
+    }
+    return preferences;
+  }
+
+  async updateNotificationPreferences(
+    userId: number,
+    data: UpdateNotificationPreferenceDto,
+  ) {
+    const preferences = await this.preferenceRepository.findOne({
+      where: { user: { userId } },
+    });
+    if (!preferences) {
+      throw new RpcException({ status: 404, message: 'Preferences not found' });
+    }
+    Object.assign(preferences, data);
+    await this.preferenceRepository.save(preferences);
+    return { message: 'Preferences updated successfully' };
   }
 }

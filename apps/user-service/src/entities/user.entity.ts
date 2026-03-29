@@ -5,12 +5,20 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToOne,
 } from 'typeorm';
+
+import { NotificationPreference } from './notification-preference.entity';
 
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
   userId: number;
+
+  @OneToOne(() => NotificationPreference, (preference) => preference.user, {
+    cascade: true,
+  })
+  notificationPreference: NotificationPreference;
 
   @Column()
   name: string;

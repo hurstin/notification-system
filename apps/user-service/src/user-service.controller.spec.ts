@@ -3,6 +3,7 @@ import { UserServiceController } from './user-service.controller';
 import { UserServiceService } from './user-service.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
+import { NotificationPreference } from './entities/notification-preference.entity';
 
 describe('UserServiceController', () => {
   let userServiceController: UserServiceController;
@@ -14,6 +15,10 @@ describe('UserServiceController', () => {
         UserServiceService,
         {
           provide: getRepositoryToken(User),
+          useValue: {}, // mock repository
+        },
+        {
+          provide: getRepositoryToken(NotificationPreference),
           useValue: {}, // mock repository
         },
         {
