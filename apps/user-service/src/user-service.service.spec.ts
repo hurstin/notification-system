@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UserServiceService } from './user-service.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
+import { NotificationPreference } from './entities/notification-preference.entity';
 import { ClientProxy } from '@nestjs/microservices';
 import { of } from 'rxjs';
 import * as bcrypt from 'bcrypt';
@@ -28,6 +29,15 @@ describe('UserServiceService', () => {
           provide: getRepositoryToken(User),
           useValue: {
             findOneBy: jest.fn(),
+            create: jest.fn(),
+            save: jest.fn(),
+          },
+        },
+        {
+          provide: getRepositoryToken(NotificationPreference),
+          useValue: {
+            findOneBy: jest.fn(),
+            findOne: jest.fn(),
             create: jest.fn(),
             save: jest.fn(),
           },

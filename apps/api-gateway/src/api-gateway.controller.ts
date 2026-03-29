@@ -11,6 +11,7 @@ import { ApiGatewayService } from './api-gateway.service';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { AuthUserDto } from './auth/dto/auth-user.dto';
 import { UpdateUserDto } from './auth/dto/update-user.dto';
+import { UpdateNotificationPreferenceDto } from './auth/dto/update-notification-preference.dto';
 
 interface RequestWithUser {
   user: AuthUserDto;
@@ -49,5 +50,23 @@ export class ApiGatewayController {
   @Get()
   getAllUsers() {
     return this.apiGatewayService.getAllUsers();
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('notification-preferences')
+  getNotificationPreferences(@Request() req: RequestWithUser) {
+    return this.apiGatewayService.getNotificationPreferences(req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('notification-preferences')
+  updateNotificationPreferences(
+    @Request() req: RequestWithUser,
+    @Body() body: UpdateNotificationPreferenceDto,
+  ) {
+    return this.apiGatewayService.updateNotificationPreferences(
+      req.user.userId,
+      body,
+    );
   }
 }

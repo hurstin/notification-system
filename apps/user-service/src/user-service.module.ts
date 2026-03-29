@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { User } from './entities/user.entity';
+import { NotificationPreference } from './entities/notification-preference.entity';
 import { UserServiceController } from './user-service.controller';
 import { UserServiceService } from './user-service.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
@@ -20,7 +21,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
           username: configService.get('DB_USERNAME'),
           password: configService.get('DB_PASSWORD'),
           database: configService.get<string>('DB_DATABASE'),
-          entities: [User],
+          entities: [User, NotificationPreference],
           // Note: synchronize=true is convenient in dev, use migrations in prod
           synchronize: true,
           autoLoadEntities: true,
@@ -28,7 +29,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
       },
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, NotificationPreference]),
     ClientsModule.registerAsync([
       {
         name: 'EMAIL_SERVICE',
