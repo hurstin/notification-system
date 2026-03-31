@@ -1,8 +1,11 @@
 import { Module } from '@nestjs/common';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 import { MailerModule } from '@nestjs-modules/mailer';
-import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
+
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { join } from 'path';
+import { CacheModule } from '@nestjs/cache-manager';
+import { RedisModule, RateLimitModule } from '@app/shared';
+
 import { EmailServiceController } from './email-service.controller';
 import { EmailService } from './email-service.service';
 
@@ -11,6 +14,12 @@ import { EmailService } from './email-service.service';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    CacheModule.register({
+      ttl: 900000, // 15 minutes local cache
+      max: 100,
+    }),
+    RedisModule.forRoot(),
+    RateLimitModule,
     MailerModule.forRootAsync({
       useFactory: (config: ConfigService) => ({
         transport: {
@@ -24,16 +33,19 @@ import { EmailService } from './email-service.service';
         defaults: {
           from: `"Notification System" <${config.get('SMTP_FROM', 'noreply@example.com')}>`,
         },
-        template: {
-          dir: join(process.cwd(), 'apps/email-service/src/templates'),
-          adapter: new HandlebarsAdapter(),
-          options: {
-            strict: true,
-          },
-        },
       }),
       inject: [ConfigService],
     }),
+    ClientsModule.register([
+      {
+        name: 'TEMPLATE_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: 'template-service',
+          port: 3003,
+        },
+      },
+    ]),
   ],
   controllers: [EmailServiceController],
   providers: [EmailService],

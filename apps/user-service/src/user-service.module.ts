@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { RedisModule } from '@app/shared';
 import { User } from './entities/user.entity';
 import { NotificationPreference } from './entities/notification-preference.entity';
 import { UserServiceController } from './user-service.controller';
@@ -29,6 +30,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
       },
       inject: [ConfigService],
     }),
+    RedisModule.forRoot(),
     TypeOrmModule.forFeature([User, NotificationPreference]),
     ClientsModule.registerAsync([
       {

@@ -6,6 +6,7 @@ import { NotificationPreference } from './entities/notification-preference.entit
 import { ClientProxy } from '@nestjs/microservices';
 import { of } from 'rxjs';
 import * as bcrypt from 'bcrypt';
+import { RedisService } from '@app/shared';
 
 describe('UserServiceService', () => {
   let service: UserServiceService;
@@ -53,6 +54,10 @@ describe('UserServiceService', () => {
           useValue: {
             emit: jest.fn().mockReturnValue(of({})),
           },
+        },
+        {
+          provide: RedisService,
+          useValue: { get: jest.fn(), set: jest.fn() },
         },
       ],
     }).compile();

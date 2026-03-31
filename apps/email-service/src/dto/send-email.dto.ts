@@ -1,6 +1,7 @@
 import {
   IsEmail,
   IsNotEmpty,
+  IsNumber,
   IsObject,
   IsOptional,
   IsString,
@@ -12,14 +13,26 @@ export class SendEmailDto {
   to: string;
 
   @IsString()
-  @IsNotEmpty()
-  subject: string;
+  @IsOptional()
+  subject?: string;
+
+  @IsString()
+  @IsOptional()
+  body?: string;
 
   @IsString()
   @IsNotEmpty()
-  template: string;
+  templateName: string;
 
   @IsObject()
   @IsOptional()
-  context?: Record<string, any>;
+  templateVariables?: Record<string, any>;
+
+  @IsString()
+  @IsOptional()
+  lang?: string;
+
+  @IsNumber()
+  @IsNotEmpty()
+  userId: number;
 }

@@ -45,6 +45,15 @@
       "compilerOptions": {
         "tsConfigPath": "apps/user-service/tsconfig.app.json"
       }
+    },
+    "template-service": {
+      "type": "application",
+      "root": "apps/template-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/template-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/template-service/tsconfig.app.json"
+      }
     }
   }
 }

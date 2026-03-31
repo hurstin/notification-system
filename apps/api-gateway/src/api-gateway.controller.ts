@@ -3,7 +3,10 @@ import {
   Controller,
   Delete,
   Get,
+  Param,
   Patch,
+  Post,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
@@ -12,6 +15,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { AuthUserDto } from './auth/dto/auth-user.dto';
 import { UpdateUserDto } from './auth/dto/update-user.dto';
 import { UpdateNotificationPreferenceDto } from './auth/dto/update-notification-preference.dto';
+import { CreateTemplateDto } from './dto/create-template.dto';
 
 interface RequestWithUser {
   user: AuthUserDto;
@@ -68,5 +72,34 @@ export class ApiGatewayController {
       req.user.userId,
       body,
     );
+  }
+
+  // Template Management Endpoints
+  @UseGuards(JwtAuthGuard)
+  @Get('templates')
+  listTemplates() {
+    return this.apiGatewayService.listTemplates();
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('templates/render')
+  getTemplate(
+    @Query('name') name: string,
+    @Query('lang') lang?: string,
+    @Body() variables?: Record<string, unknown>,
+  ) {
+    return this.apiGatewayService.getTemplate(name, lang, variables);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('templates')
+  createTemplate(@Body() data: CreateTemplateDto) {
+    return this.apiGatewayService.createTemplate(data);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('templates/:name')
+  updateTemplate(@Param('name') name: string, @Body() data: any) {
+    return this.apiGatewayService.updateTemplate(name, data);
   }
 }
