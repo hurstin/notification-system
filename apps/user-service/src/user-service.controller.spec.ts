@@ -4,6 +4,7 @@ import { UserServiceService } from './user-service.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { NotificationPreference } from './entities/notification-preference.entity';
+import { RedisService } from '@app/shared';
 
 describe('UserServiceController', () => {
   let userServiceController: UserServiceController;
@@ -32,6 +33,10 @@ describe('UserServiceController', () => {
           useValue: {
             emit: jest.fn(),
           },
+        },
+        {
+          provide: RedisService,
+          useValue: { get: jest.fn(), set: jest.fn() },
         },
       ],
     }).compile();

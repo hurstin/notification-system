@@ -1,6 +1,11 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { ClientProxy } from '@nestjs/microservices';
 import * as admin from 'firebase-admin';
+import { firstValueFrom } from 'rxjs';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import { RedisService, RateLimitService } from '@app/shared';
 import { SendPushDto } from './dto/send-push.dto';
 
 @Injectable()
@@ -8,7 +13,13 @@ export class PushService implements OnModuleInit {
   private readonly logger = new Logger(PushService.name);
   private fcmApp: admin.app.App;
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    @Inject('TEMPLATE_SERVICE') private readonly templateClient: ClientProxy,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private readonly redisService: RedisService,
+    private readonly rateLimitService: RateLimitService,
+  ) {}
 
   /**
    * Initializes the service on module startup.
@@ -70,8 +81,89 @@ export class PushService implements OnModuleInit {
    * Sends a push notification to multiple device tokens.
    * @param sendPushDto The payload containing tokens, title, body, and optional metadata.
    */
-  async sendPush(sendPushDto: SendPushDto): Promise<any> {
-    const { tokens, title, body, image, link, data } = sendPushDto;
+  async sendPush(
+    sendPushDto: SendPushDto & {
+      templateName?: string;
+      templateVariables?: Record<string, unknown>;
+      lang?: string;
+      userId?: number;
+    },
+  ): Promise<
+    | admin.messaging.BatchResponse
+    | { success: boolean; message?: string; error?: string }
+  > {
+    const {
+      tokens,
+      image,
+      link,
+      data,
+      templateName,
+      templateVariables,
+      lang,
+      userId,
+    } = sendPushDto;
+    let { title, body } = sendPushDto;
+
+    // 1. Preference Check (Redis)
+    if (userId) {
+      const prefs = await this.redisService.get<{ pushEnabled?: boolean }>(
+        `user_prefs:${userId}`,
+      );
+      if (prefs && prefs.pushEnabled === false) {
+        this.logger.log(`Push skipped for user ${userId}: Opted out.`);
+        return {
+          success: false,
+          message: 'User opted out of push notifications',
+        };
+      }
+
+      // 2. Rate Limiting Check
+      const isAllowed = await this.rateLimitService.checkRateLimit(
+        'push',
+        userId.toString(),
+        20,
+        3600,
+      ); // Max 20 pushes per hour
+      if (!isAllowed) {
+        this.logger.warn(
+          `Push discarded for user ${userId}: Rate limit exceeded.`,
+        );
+        return { success: false, error: 'Rate limit exceeded' };
+      }
+    }
+
+    // 3. Template Resolution & Local Caching
+    if (templateName) {
+      try {
+        const cacheKey = `template:${templateName}:${lang || 'en'}`;
+        let template = await this.cacheManager.get<{
+          subject: string;
+          body: string;
+        }>(cacheKey);
+
+        if (!template) {
+          template = await firstValueFrom(
+            this.templateClient.send(
+              { cmd: 'get_template' },
+              {
+                name: templateName,
+                lang: lang || 'en',
+                variables: templateVariables,
+              },
+            ),
+          );
+          await this.cacheManager.set(cacheKey, template, 900000); // 15 mins TTL
+        }
+        if (template) {
+          title = template.subject;
+          body = template.body;
+        }
+      } catch (error) {
+        this.logger.error(
+          `Failed to fetch template ${templateName}: ${(error as Error).message}`,
+        );
+      }
+    }
 
     // Ensure the FCM app is ready before attempting to send messages
     if (!this.fcmApp) {

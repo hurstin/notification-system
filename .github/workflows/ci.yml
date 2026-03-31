@@ -33,7 +33,7 @@ jobs:
     strategy:
       matrix:
         # List all your service folder names here
-        service: [api-gateway, user-service, email-service, push-service]
+        service: [api-gateway, user-service, email-service, push-service, template-service]
     
     steps:
       - name: Checkout code
@@ -64,7 +64,7 @@ jobs:
     needs: build-and-test
     strategy:
       matrix:
-        service: [api-gateway, user-service, email-service, push-service]
+        service: [api-gateway, user-service, email-service, push-service, template-service]
 
     steps:
       - name: Checkout code

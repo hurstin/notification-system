@@ -14,6 +14,10 @@ describe('ApiGatewayController', () => {
           provide: 'USER_SERVICE',
           useValue: {}, // mock client
         },
+        {
+          provide: 'TEMPLATE_SERVICE',
+          useValue: {}, // mock client
+        },
       ],
     }).compile();
 

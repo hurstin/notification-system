@@ -18,6 +18,14 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
           port: 3001,
         },
       },
+      {
+        name: 'TEMPLATE_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: 'template-service',
+          port: 3003,
+        },
+      },
     ]),
   ],
   controllers: [ApiGatewayController],

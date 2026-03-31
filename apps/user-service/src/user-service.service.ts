@@ -12,6 +12,7 @@ import { UpdatePasswordDto } from 'apps/api-gateway/src/auth/dto/updatePassword.
 import { ResetPasswordDto } from 'apps/api-gateway/src/auth/dto/reset-password.dto';
 import { UserDto } from './dto/user.dto';
 import { UpdateUserDto } from 'apps/api-gateway/src/auth/dto/update-user.dto';
+import { RedisService } from '@app/shared';
 
 export class UpdateNotificationPreferenceDto {
   emailEnabled?: boolean;
@@ -27,6 +28,7 @@ export class UserServiceService {
     private preferenceRepository: Repository<NotificationPreference>,
     @Inject('EMAIL_SERVICE') private readonly emailClient: ClientProxy,
     @Inject('PUSH_SERVICE') private readonly pushClient: ClientProxy,
+    private readonly redisService: RedisService,
   ) {}
 
   async createUser(
@@ -56,19 +58,20 @@ export class UserServiceService {
       notificationPreference: this.preferenceRepository.create(), // Default preferences
     });
 
+    // save user first so we have the userId for the notification payload
+    const savedUser = await this.usersRepository.save(user);
+
     // send verification token to email
     this.emailClient.emit('send_email', {
-      to: user.email,
+      to: savedUser.email,
       subject: 'Welcome to Notification System! Confirm your Email',
-      template: 'welcome',
-      context: {
-        name: user.name,
-        url: `http://localhost:3000/auth/verify?token=${emailToken}`,
+      templateName: 'WELCOME_EMAIL',
+      templateVariables: {
+        name: savedUser.name,
+        verifyUrl: `http://localhost:3000/auth/verify?token=${emailToken}`,
       },
+      userId: savedUser.userId,
     });
-
-    // save user
-    const savedUser = await this.usersRepository.save(user);
 
     // remove password from user object before returning
 
@@ -192,11 +195,12 @@ export class UserServiceService {
     this.emailClient.emit('send_email', {
       to: user.email,
       subject: 'Reset Password',
-      template: 'welcome', // for now use welcome or create a separate one
-      context: {
-        name: user.name,
-        url: `http://localhost:3000/auth/reset-password?token=${resetToken}`,
+      templateName: 'PASSWORD_RESET',
+      templateVariables: {
+        userName: user.name,
+        resetLink: `http://localhost:3000/auth/reset-password?token=${resetToken}`,
       },
+      userId: user.userId,
     });
 
     // return success message
@@ -347,11 +351,12 @@ export class UserServiceService {
     this.emailClient.emit('send_email', {
       to: existingUser.email,
       subject: 'Verify your email',
-      template: 'welcome',
-      context: {
-        name: existingUser.name,
-        url: `http://localhost:3000/auth/verify-email?token=${verificationToken}`,
+      templateName: 'WELCOME_EMAIL', // You can use a generic verify email template later
+      templateVariables: {
+        userName: existingUser.name,
+        verifyLink: `http://localhost:3000/auth/verify-email?token=${verificationToken}`,
       },
+      userId: existingUser.userId,
     });
     await this.usersRepository.save(existingUser);
     return { message: 'Verification email sent successfully' };
@@ -379,6 +384,13 @@ export class UserServiceService {
     }
     Object.assign(preferences, data);
     await this.preferenceRepository.save(preferences);
+
+    // Mirror to Redis (cache) for fast access by email/push services
+    await this.redisService.set(`user_prefs:${userId}`, {
+      emailEnabled: preferences.emailEnabled,
+      pushEnabled: preferences.pushEnabled,
+    });
+
     return { message: 'Preferences updated successfully' };
   }
 }
