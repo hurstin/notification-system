@@ -4,6 +4,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { RedisModule } from '@app/shared';
 import { User } from './entities/user.entity';
 import { NotificationPreference } from './entities/notification-preference.entity';
+import { DeviceToken } from './entities/device-token.entity';
+import { NotificationHistory } from './entities/notification-history.entity';
 import { UserServiceController } from './user-service.controller';
 import { UserServiceService } from './user-service.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
@@ -22,7 +24,12 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
           username: configService.get('DB_USERNAME'),
           password: configService.get('DB_PASSWORD'),
           database: configService.get<string>('DB_DATABASE'),
-          entities: [User, NotificationPreference],
+          entities: [
+            User,
+            NotificationPreference,
+            DeviceToken,
+            NotificationHistory,
+          ],
           // Note: synchronize=true is convenient in dev, use migrations in prod
           synchronize: true,
           autoLoadEntities: true,
@@ -31,7 +38,12 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
       inject: [ConfigService],
     }),
     RedisModule.forRoot(),
-    TypeOrmModule.forFeature([User, NotificationPreference]),
+    TypeOrmModule.forFeature([
+      User,
+      NotificationPreference,
+      DeviceToken,
+      NotificationHistory,
+    ]),
     ClientsModule.registerAsync([
       {
         name: 'EMAIL_SERVICE',
