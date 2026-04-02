@@ -4,6 +4,8 @@ import { UserServiceService } from './user-service.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { NotificationPreference } from './entities/notification-preference.entity';
+import { DeviceToken } from './entities/device-token.entity';
+import { NotificationHistory } from './entities/notification-history.entity';
 import { RedisService } from '@app/shared';
 
 describe('UserServiceController', () => {
@@ -20,6 +22,14 @@ describe('UserServiceController', () => {
         },
         {
           provide: getRepositoryToken(NotificationPreference),
+          useValue: {}, // mock repository
+        },
+        {
+          provide: getRepositoryToken(DeviceToken),
+          useValue: {}, // mock repository
+        },
+        {
+          provide: getRepositoryToken(NotificationHistory),
           useValue: {}, // mock repository
         },
         {

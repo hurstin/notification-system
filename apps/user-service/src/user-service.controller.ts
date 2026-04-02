@@ -98,4 +98,44 @@ export class UserServiceController {
       data.preferences,
     );
   }
+
+  @MessagePattern({ cmd: 'register_device_token' })
+  async registerDeviceToken(
+    @Payload() data: { userId: number; token: string; deviceType?: string },
+  ) {
+    return this.userServiceService.registerDeviceToken(data.userId, data);
+  }
+
+  @MessagePattern({ cmd: 'delete_device_token' })
+  async deleteDeviceToken(@Payload() data: { userId: number; token: string }) {
+    return this.userServiceService.deleteDeviceToken(data.userId, data.token);
+  }
+
+  @MessagePattern({ cmd: 'send_notification' })
+  async sendNotification(
+    @Payload()
+    data: {
+      toUserId: number;
+      templateName: string;
+      channels?: string[];
+      variables?: Record<string, unknown>;
+    },
+  ) {
+    return this.userServiceService.sendNotification(data);
+  }
+
+  @MessagePattern({ cmd: 'get_notifications' })
+  async getNotifications(@Payload() userId: number) {
+    return this.userServiceService.getNotifications(userId);
+  }
+
+  @MessagePattern({ cmd: 'mark_notification_read' })
+  async markNotificationRead(
+    @Payload() data: { userId: number; notificationId: number },
+  ) {
+    return this.userServiceService.markNotificationRead(
+      data.userId,
+      data.notificationId,
+    );
+  }
 }

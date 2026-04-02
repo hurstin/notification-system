@@ -38,4 +38,9 @@ export class TemplateController {
   async listTemplates() {
     return this.templateService.listTemplates();
   }
+
+  @MessagePattern({ cmd: 'delete_template' })
+  async deleteTemplate(@Payload() name: string) {
+    return this.templateService.deleteTemplate(name);
+  }
 }

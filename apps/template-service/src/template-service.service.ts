@@ -132,4 +132,15 @@ export class TemplateService {
     }
     return template;
   }
+
+  async deleteTemplate(name: string) {
+    const template = await this.templateRepo.findOne({ where: { name } });
+    if (!template) {
+      throw new RpcException({
+        status: 404,
+        message: `Template ${name} not found`,
+      });
+    }
+    return this.templateRepo.remove(template);
+  }
 }

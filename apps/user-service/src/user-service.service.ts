@@ -4,6 +4,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { NotificationPreference } from './entities/notification-preference.entity';
+import { DeviceToken } from './entities/device-token.entity';
+import { NotificationHistory } from './entities/notification-history.entity';
 import { CreateUserDto } from 'apps/api-gateway/src/auth/dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid'; // npm install uuid
@@ -26,6 +28,10 @@ export class UserServiceService {
     private usersRepository: Repository<User>,
     @InjectRepository(NotificationPreference)
     private preferenceRepository: Repository<NotificationPreference>,
+    @InjectRepository(DeviceToken)
+    private deviceTokenRepository: Repository<DeviceToken>,
+    @InjectRepository(NotificationHistory)
+    private historyRepository: Repository<NotificationHistory>,
     @Inject('EMAIL_SERVICE') private readonly emailClient: ClientProxy,
     @Inject('PUSH_SERVICE') private readonly pushClient: ClientProxy,
     private readonly redisService: RedisService,
@@ -392,5 +398,132 @@ export class UserServiceService {
     });
 
     return { message: 'Preferences updated successfully' };
+  }
+
+  async registerDeviceToken(
+    userId: number,
+    data: { token: string; deviceType?: string },
+  ) {
+    const user = await this.usersRepository.findOneBy({ userId });
+    if (!user) {
+      throw new RpcException({ status: 404, message: 'User not found' });
+    }
+
+    let deviceToken = await this.deviceTokenRepository.findOneBy({
+      token: data.token,
+    });
+
+    if (deviceToken) {
+      // Reassign to current user if it belongs to someone else
+      deviceToken.user = user;
+      deviceToken.deviceType = data.deviceType ?? null;
+    } else {
+      deviceToken = this.deviceTokenRepository.create({
+        token: data.token,
+        deviceType: data.deviceType ?? null,
+        user,
+      });
+    }
+
+    await this.deviceTokenRepository.save(deviceToken);
+    return { message: 'Device token registered successfully' };
+  }
+
+  async deleteDeviceToken(userId: number, token: string) {
+    const deviceToken = await this.deviceTokenRepository.findOne({
+      where: { token, user: { userId } },
+    });
+
+    if (!deviceToken) {
+      throw new RpcException({
+        status: 404,
+        message: 'Device token not found',
+      });
+    }
+
+    await this.deviceTokenRepository.remove(deviceToken);
+    return { message: 'Device token removed successfully' };
+  }
+
+  async sendNotification(data: {
+    toUserId: number;
+    templateName: string;
+    channels?: string[];
+    variables?: Record<string, unknown>;
+  }) {
+    const user = await this.usersRepository.findOne({
+      where: { userId: data.toUserId },
+      relations: ['deviceTokens'],
+    });
+
+    if (!user) {
+      throw new RpcException({ status: 404, message: 'User not found' });
+    }
+
+    const channels = data.channels || ['EMAIL', 'PUSH']; // Default to both
+
+    if (channels.includes('EMAIL')) {
+      this.emailClient.emit('send_email', {
+        to: user.email,
+        templateName: data.templateName,
+        templateVariables: data.variables,
+        userId: user.userId,
+      });
+
+      await this.historyRepository.save(
+        this.historyRepository.create({
+          user,
+          templateName: data.templateName,
+          channel: 'EMAIL',
+        }),
+      );
+    }
+
+    if (channels.includes('PUSH')) {
+      const tokens = user.deviceTokens.map((dt) => dt.token);
+      if (tokens.length > 0) {
+        this.pushClient.emit('send_push', {
+          tokens,
+          templateName: data.templateName,
+          templateVariables: data.variables,
+          userId: user.userId,
+        });
+
+        await this.historyRepository.save(
+          this.historyRepository.create({
+            user,
+            templateName: data.templateName,
+            channel: 'PUSH',
+          }),
+        );
+      }
+    }
+
+    return { message: 'Notification dispatch triggered successfully' };
+  }
+
+  async getNotifications(userId: number) {
+    return this.historyRepository.find({
+      where: { user: { userId } },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async markNotificationRead(userId: number, notificationId: number) {
+    const notification = await this.historyRepository.findOne({
+      where: { id: notificationId, user: { userId } },
+    });
+
+    if (!notification) {
+      throw new RpcException({
+        status: 404,
+        message: 'Notification not found',
+      });
+    }
+
+    notification.isRead = true;
+    await this.historyRepository.save(notification);
+
+    return { message: 'Notification marked as read' };
   }
 }

@@ -6,9 +6,12 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToOne,
+  OneToMany,
 } from 'typeorm';
 
 import { NotificationPreference } from './notification-preference.entity';
+import { DeviceToken } from './device-token.entity';
+import { NotificationHistory } from './notification-history.entity';
 
 @Entity()
 export class User {
@@ -19,6 +22,16 @@ export class User {
     cascade: true,
   })
   notificationPreference: NotificationPreference;
+
+  @OneToMany(() => DeviceToken, (deviceToken) => deviceToken.user, {
+    cascade: true,
+  })
+  deviceTokens: DeviceToken[];
+
+  @OneToMany(() => NotificationHistory, (notification) => notification.user, {
+    cascade: true,
+  })
+  notifications: NotificationHistory[];
 
   @Column()
   name: string;
